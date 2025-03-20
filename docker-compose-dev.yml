@@ -27,8 +27,9 @@ services:
 
   db:
     image: timescale/timescaledb:latest-pg17
-    restart: unless-stopped
     container_name: inethi-monitoring-db-timescale
+    restart: unless-stopped
+
     env_file:
       - ./.env
     volumes:
@@ -43,6 +44,7 @@ services:
     container_name: inethi-monitoring-celery-redis
 
   celery:
+    container_name: inethi-monitoring-celery
     build:
       context: .
     env_file:
@@ -54,11 +56,13 @@ services:
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
-    container_name: inethi-backend-celery
+
     depends_on:
       - redis
       - db
+
   celery_beat:
+    container_name: inethi-monitoring-celery-beat
     build:
       context: .
     env_file:
@@ -69,7 +73,7 @@ services:
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
-    container_name: inethi-monitoring-celery-beat
+
     depends_on:
       - redis
       - db

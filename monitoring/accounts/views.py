@@ -46,21 +46,20 @@ class RegisterView(APIView):
         serializer = CustomUserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             username = serializer.validated_data['username']
-            email = serializer.validated_data['email']
             password = serializer.validated_data['password']
 
             # Prepare payload for cloud API login endpoint.
             cloud_payload = {
                 "username": username,
                 "password": password,
-                "email": email  # include if needed by the cloud API
             }
 
             # URL of your cloud API login endpoint
-            cloud_api_url = settings.CLOUD_API_URL  # e.g. "https://cloud.example.com/api/network-admin/login/"
-            cloud_api_url = cloud_api_url + '/api/v1/network-admin/login/'
+            cloud_api_url = settings.CLOUD_API_LOGIN_URL  # e.g. "https://cloud.example.com/api/network-admin/login/"
+
             try:
                 cloud_response = requests.post(cloud_api_url, json=cloud_payload, timeout=5)
+
             except requests.RequestException as exc:
                 return Response(
                     {"error": "Failed to connect to cloud API", "details": str(exc)},
@@ -68,12 +67,22 @@ class RegisterView(APIView):
                 )
 
             if cloud_response.status_code != 200:
+                try:
+                    error_details = cloud_response.json()
+                except ValueError:
+                    error_details = cloud_response.text
                 return Response(
-                    {"error": "Cloud API authentication failed", "details": cloud_response.json()},
+                    {"error": "Cloud API authentication failed", "details": error_details},
                     status=cloud_response.status_code
                 )
 
-            cloud_data = cloud_response.json()
+            try:
+                cloud_data = cloud_response.json()
+            except ValueError as e:
+                return Response(
+                    {"error": "Cloud API returned invalid JSON", "details": str(e)},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             cloud_token = cloud_data.get('token')
             if not cloud_token:
                 return Response(

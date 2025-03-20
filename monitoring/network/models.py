@@ -73,3 +73,25 @@ class Host(models.Model):
 
     def __str__(self):
         return self.name if self.name else self.ip_address
+
+
+class Ping(models.Model):
+    host = models.ForeignKey(
+        Host,
+        on_delete=models.CASCADE,
+        related_name='ping_results'
+    )
+    is_alive = models.BooleanField(default=False)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    network = models.ForeignKey(
+        Network,
+        on_delete=models.CASCADE,
+        related_name='pings',
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        status = "Alive" if self.is_alive else "Down"
+        return f"{self.host} at {self.timestamp}: {status}"

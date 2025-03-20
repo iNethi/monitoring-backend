@@ -12,21 +12,30 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 import environ
+import os
 
+
+AUTH_USER_MODEL = 'accounts.CustomUser'
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+if os.path.exists(os.path.join(BASE_DIR, ".env")):
+    environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+    print("Environment variables loaded")
 env = environ.Env(
     ALLOWED_HOSTS=(list, []),
     CSRF_TRUSTED_ORIGINS=(list, []),
     CORS_ALLOWED_ORIGINS=(list, []),
 )
 CLOUD_API_URL=env("CLOUD_API_URL")
+# settings.py
+CLOUD_API_LOGIN_URL = f"{CLOUD_API_URL}user/network-admin/login/"
+CLOUD_NETWORK_CREATE_URL = f"{CLOUD_API_URL}networks/"
+CLOUD_HOST_CREATE_URL = f"{CLOUD_API_URL}hosts/"
+
+CORS_ORIGIN_ALLOW_ALL = True
 
 print(CLOUD_API_URL)
-AUTH_USER_MODEL = 'accounts.CustomUser'
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -62,6 +71,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
