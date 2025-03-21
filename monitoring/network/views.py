@@ -64,8 +64,7 @@ class NetworkDetailView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
         payload = request.data.copy()
-        # Optionally, set admin to current user if needed
-        payload['admin'] = user.username
+
         headers = {"Authorization": f"Bearer {token}"}
         # Construct the cloud endpoint URL (assumes RESTful URL with network id)
         cloud_network_url = f"{settings.CLOUD_NETWORK_CREATE_URL}{pk}/"
@@ -128,8 +127,6 @@ class CreateNetworkView(APIView):
 
         # Prepare payload from request data.
         payload = request.data.copy()
-        # Optionally include the admin's username.
-        payload['admin'] = user.username
 
         headers = {"Authorization": f"Bearer {token}"}
         cloud_network_url = settings.CLOUD_NETWORK_CREATE_URL
@@ -147,9 +144,11 @@ class CreateNetworkView(APIView):
             )
 
         # Cloud creation succeeded; create the network locally.
-        serializer = NetworkSerializer(data=request.data)
+        local_data = request.data.copy()
+        local_data['admin'] = user.id
+        serializer = NetworkSerializer(data=local_data)
         if serializer.is_valid():
-            network = serializer.save(admin=user)
+            network = serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -262,8 +261,6 @@ class CreateHostView(APIView):
             )
 
         payload = request.data.copy()
-        # Include the user's identifier for mapping.
-        payload['user'] = user.username
 
         headers = {"Authorization": f"Bearer {token}"}
         cloud_host_url = settings.CLOUD_HOST_CREATE_URL
