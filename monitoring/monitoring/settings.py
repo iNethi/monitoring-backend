@@ -33,6 +33,8 @@ CLOUD_API_LOGIN_URL = f"{CLOUD_API_URL}user/network-admin/login/"
 CLOUD_NETWORK_CREATE_URL = f"{CLOUD_API_URL}networks/"
 CLOUD_HOST_CREATE_URL = f"{CLOUD_API_URL}hosts/"
 CLOUD_INGEST_URL = f"{CLOUD_API_URL}ingest-uptime/"
+CLOUD_HOST_UPDATE_URL= f"{CLOUD_API_URL}hosts/update-by-identifier/"
+CLOUD_HOST_DELETE_URL = f"{CLOUD_API_URL}hosts/delete-by-identifier/"
 CORS_ORIGIN_ALLOW_ALL = True
 
 print(CLOUD_API_URL)

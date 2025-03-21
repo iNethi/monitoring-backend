@@ -25,10 +25,12 @@ def submit_ping_data():
       ]
     }
     """
-    time_threshold = timezone.now() - timedelta(minutes=5)
+    time_threshold = timezone.now() - timedelta(minutes=1)
     networks = Network.objects.all()
 
     for network in networks:
+        if not network.cloud_pk:
+            continue
         # Retrieve pings for this network in the last 5 minutes.
         pings = Ping.objects.filter(network=network, timestamp__gte=time_threshold)
         if not pings.exists():
@@ -38,14 +40,14 @@ def submit_ping_data():
         data = []
         for ping in pings:
             data.append({
-                "host": ping.host.id,
+                "host": ping.host.cloud_pk,
                 "is_alive": ping.is_alive,
                 "timestamp": ping.timestamp.isoformat(),
             })
 
         payload = {
-            "network": network.id,
-            "network_admin": network.admin.username,  # or another unique identifier
+            "network": network.cloud_pk,
+            "network_admin": network.admin.username,
             "data": data,
         }
 

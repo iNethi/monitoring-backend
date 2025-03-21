@@ -18,6 +18,7 @@ class Network(models.Model):
         help_text="User who administrates this network"
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    cloud_pk = models.IntegerField(unique=True, null=True)
 
     def __str__(self):
         return self.name
@@ -70,6 +71,8 @@ class Host(models.Model):
         blank=True,
         null=True
     )
+
+    cloud_pk = models.IntegerField(unique=True, null=True)
 
     def __str__(self):
         return self.name if self.name else self.ip_address

@@ -67,7 +67,7 @@ class NetworkDetailView(APIView):
 
         headers = {"Authorization": f"Bearer {token}"}
         # Construct the cloud endpoint URL (assumes RESTful URL with network id)
-        cloud_network_url = f"{settings.CLOUD_NETWORK_CREATE_URL}{pk}/"
+        cloud_network_url = f"{settings.CLOUD_NETWORK_CREATE_URL}{network.cloud_pk}/"
 
         try:
             cloud_response = requests.put(cloud_network_url, json=payload, headers=headers, timeout=5)
@@ -94,7 +94,7 @@ class NetworkDetailView(APIView):
             return Response({"error": "Failed to obtain cloud token", "details": error},
                             status=status.HTTP_400_BAD_REQUEST)
         headers = {"Authorization": f"Bearer {token}"}
-        cloud_network_url = f"{settings.CLOUD_NETWORK_CREATE_URL}{pk}/"
+        cloud_network_url = f"{settings.CLOUD_NETWORK_CREATE_URL}{network.cloud_pk}/"
         try:
             cloud_response = requests.delete(cloud_network_url, headers=headers, timeout=5)
         except requests.RequestException as exc:
@@ -142,10 +142,13 @@ class CreateNetworkView(APIView):
                 {"error": "Cloud network creation failed", "details": cloud_response.text},
                 status=cloud_response.status_code
             )
-
+        json_response = cloud_response.json()
+        cloud_pk = json_response["id"]
+        print(json_response)
         # Cloud creation succeeded; create the network locally.
         local_data = request.data.copy()
         local_data['admin'] = user.id
+        local_data['cloud_pk'] = cloud_pk
         serializer = NetworkSerializer(data=local_data)
         if serializer.is_valid():
             network = serializer.save()
@@ -203,9 +206,9 @@ class HostDetailView(APIView):
             return Response({"error": "Failed to obtain cloud token", "details": error},
                             status=status.HTTP_400_BAD_REQUEST)
         payload = request.data.copy()
-        payload['user'] = user.username
+        payload['network'] = host.network.name
         headers = {"Authorization": f"Bearer {token}"}
-        cloud_host_url = f"{settings.CLOUD_HOST_CREATE_URL}{pk}/"
+        cloud_host_url = f"{settings.CLOUD_HOST_UPDATE_URL}"
         try:
             cloud_response = requests.put(cloud_host_url, json=payload, headers=headers, timeout=5)
         except requests.RequestException as exc:
@@ -214,6 +217,7 @@ class HostDetailView(APIView):
         if cloud_response.status_code not in (200, 201):
             return Response({"error": "Cloud host update failed", "details": cloud_response.text},
                             status=cloud_response.status_code)
+        request.data['user'] = user.id
         serializer = HostSerializer(host, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -230,9 +234,14 @@ class HostDetailView(APIView):
             return Response({"error": "Failed to obtain cloud token", "details": error},
                             status=status.HTTP_400_BAD_REQUEST)
         headers = {"Authorization": f"Bearer {token}"}
-        cloud_host_url = f"{settings.CLOUD_HOST_CREATE_URL}{pk}/"
+        cloud_host_url = f"{settings.CLOUD_HOST_DELETE_URL}"
+        payload = {
+            "ip_address": host.ip_address,
+            "mac_address": host.mac_address,
+            "network": host.network,
+        }
         try:
-            cloud_response = requests.delete(cloud_host_url, headers=headers, timeout=5)
+            cloud_response = requests.delete(cloud_host_url, data=payload, headers=headers, timeout=5)
         except requests.RequestException as exc:
             return Response({"error": "Failed to delete host on cloud", "details": str(exc)},
                             status=status.HTTP_502_BAD_GATEWAY)
@@ -259,8 +268,9 @@ class CreateHostView(APIView):
                 {"error": "Failed to obtain cloud token", "details": error},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
+        network = Network.objects.get(pk=request.data['network'])
         payload = request.data.copy()
+        payload['network'] = network.cloud_pk
 
         headers = {"Authorization": f"Bearer {token}"}
         cloud_host_url = settings.CLOUD_HOST_CREATE_URL
@@ -276,9 +286,15 @@ class CreateHostView(APIView):
                 {"error": "Cloud host creation failed", "details": cloud_response.text},
                 status=cloud_response.status_code
             )
+        json_response = cloud_response.json()
+        cloud_pk = json_response["id"]
+        print(json_response)
+        # Cloud creation succeeded; create the network locally.
+        local_data = request.data.copy()
+        local_data['cloud_pk'] = cloud_pk
 
         # Cloud call succeeded; create the host locally.
-        serializer = HostSerializer(data=request.data)
+        serializer = HostSerializer(data=local_data)
         if serializer.is_valid():
             host = serializer.save(user=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
