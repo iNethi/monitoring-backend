@@ -25,7 +25,7 @@ def submit_ping_data():
       ]
     }
     """
-    time_threshold = timezone.now() - timedelta(minutes=1)
+    time_threshold = timezone.now() - timedelta(minutes=5)
     networks = Network.objects.all()
 
     for network in networks:
