@@ -1,0 +1,93 @@
+services:
+  app:
+    container_name: inethi-monitoring
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    build:
+      context: .
+      args:
+        - DEV=${DEV:-true}
+    ports:
+      - "8100:8000"
+    volumes:
+      - ./monitoring:/monitoring
+    command: >
+      sh -c "python manage.py wait_for_db &&
+              python manage.py migrate &&
+              python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - DB_HOST=${DB_HOST:-db}
+      - DB_NAME=${DB_NAME:-devdb}
+      - DB_USER=${DB_USER:-devuser}
+      - DB_PASS=${DB_PASS:-devpass}
+    depends_on:
+      - db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monitoring-backend.rule=Host(`monitoring-backend.inethilocal.net`)"
+      - "traefik.http.routers.monitoring-backend.entrypoints=websecure"
+      - "traefik.http.services.monitoring-backend.loadbalancer.server.port=8000"
+
+
+  db:
+    image: timescale/timescaledb:latest-pg17
+    container_name: inethi-monitoring-db-timescale
+    restart: unless-stopped
+
+    env_file:
+      - ./.env
+    volumes:
+      - prod-db-data-monitoring-timescale:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME:-devdb}
+      - POSTGRES_USER=${DB_USER:-devuser}
+      - POSTGRES_PASSWORD=${DB_PASS:-devpass}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monitoring-backenddb.entrypoints=websecure"
+  redis:
+    image: redis:alpine
+    container_name: inethi-monitoring-celery-redis
+
+  celery:
+    container_name: inethi-monitoring-celery
+    build:
+      context: .
+    env_file:
+      - ./.env
+    restart: always
+    command: celery -A monitoring worker -l INFO
+    volumes:
+      - ./monitoring:/monitoring
+    environment:
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+
+    depends_on:
+      - redis
+      - db
+
+  celery_beat:
+    container_name: inethi-monitoring-celery-beat
+    build:
+      context: .
+    env_file:
+      - ./.env
+    command: celery -A monitoring beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./monitoring:/monitoring
+    environment:
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+
+    depends_on:
+      - redis
+      - db
+networks:
+  default:
+    external:
+      name: "inethi-bridge-traefik"
+
+volumes:
+  prod-db-data-monitoring-timescale:
