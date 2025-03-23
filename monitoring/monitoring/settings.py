@@ -37,6 +37,9 @@ CLOUD_HOST_UPDATE_URL= f"{CLOUD_API_URL}hosts/update-by-identifier/"
 CLOUD_HOST_DELETE_URL = f"{CLOUD_API_URL}hosts/delete-by-identifier/"
 CORS_ORIGIN_ALLOW_ALL = True
 
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS')
+
 print(CLOUD_API_URL)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
