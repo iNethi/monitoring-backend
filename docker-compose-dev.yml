@@ -1,7 +1,7 @@
 services:
   app:
     container_name: inethi-monitoring
-    restart: unless-stopped
+
     env_file:
       - ./.env
     build:
@@ -24,11 +24,9 @@ services:
     depends_on:
       - db
 
-
   db:
     image: timescale/timescaledb:latest-pg17
     container_name: inethi-monitoring-db-timescale
-    restart: unless-stopped
 
     env_file:
       - ./.env
@@ -49,7 +47,7 @@ services:
       context: .
     env_file:
       - ./.env
-    restart: always
+
     command: celery -A monitoring worker -l INFO
     volumes:
       - ./monitoring:/monitoring

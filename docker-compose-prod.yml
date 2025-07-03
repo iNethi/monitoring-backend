@@ -29,7 +29,6 @@ services:
       - "traefik.http.routers.monitoring-backend.entrypoints=websecure"
       - "traefik.http.services.monitoring-backend.loadbalancer.server.port=8000"
 
-
   db:
     image: timescale/timescaledb:latest-pg17
     container_name: inethi-monitoring-db-timescale
@@ -48,6 +47,7 @@ services:
       - "traefik.http.routers.monitoring-backenddb.entrypoints=websecure"
   redis:
     image: redis:alpine
+    restart: unless-stopped
     container_name: inethi-monitoring-celery-redis
 
   celery:
@@ -56,7 +56,7 @@ services:
       context: .
     env_file:
       - ./.env
-    restart: always
+    restart: unless-stopped
     command: celery -A monitoring worker -l INFO
     volumes:
       - ./monitoring:/monitoring
@@ -70,6 +70,7 @@ services:
 
   celery_beat:
     container_name: inethi-monitoring-celery-beat
+    restart: unless-stopped
     build:
       context: .
     env_file:
