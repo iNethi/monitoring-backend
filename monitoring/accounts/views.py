@@ -9,8 +9,11 @@ from .serializers import CustomUserRegistrationSerializer
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+import logging
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 
 class LocalLoginView(ObtainAuthToken):

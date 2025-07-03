@@ -4,6 +4,7 @@ ENV PYTHONUNBUFFERED=1
 
 COPY ./requirements.txt /tmp/requirements.txt
 COPY ./monitoring /monitoring
+RUN chmod +x /monitoring/run.sh
 WORKDIR /monitoring
 EXPOSE 8000
 
@@ -29,4 +30,4 @@ ENV PATH="/scripts:/py/bin:$PATH"
 
 USER django-user
 
-CMD ["run.sh"]
+CMD ["/monitoring/run.sh"]

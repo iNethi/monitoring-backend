@@ -1,19 +1,29 @@
 import subprocess
 from celery import shared_task
-from .models import Host, Ping
 import requests
-from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
-from .models import Ping, Network
+from .models import Network, Host, Ping
 from .utils import get_cloud_token
+import logging
 
-@shared_task
+logger = logging.getLogger(__name__)
+
+@shared_task(
+    autoretry_for=(requests.RequestException, Exception),
+    retry_kwargs={'max_retries': 10},
+    retry_backoff=True,           # Exponential backoff (starts at 1s, doubles)
+    retry_backoff_max=3600,       # Max backoff is 1 hour
+    retry_jitter=True             # Add randomness to avoid thundering herd
+)
 def submit_ping_data():
     """
     Every 5 minutes, aggregate ping data for each network (from the last 5 minutes)
     and send it to the cloud API's ingest endpoint.
+
+    If the cloud API is unreachable, this task will retry up to 10 times with
+    exponential backoff (up to 1 hour between attempts).
 
     Expected payload:
     {
@@ -54,22 +64,23 @@ def submit_ping_data():
         # Obtain a fresh token using the network admin's credentials.
         token, error = get_cloud_token(network.admin)
         if not token:
-            # Log the error (here we simply print; in production use proper logging)
-            print(f"Failed to obtain cloud token for network {network.id}: {error}")
-            continue
+            logger.error(f"Failed to obtain cloud token for network {network.id}: {error}")
+            raise Exception(f"Failed to obtain cloud token for network {network.id}: {error}")
 
         headers = {"Authorization": f"Bearer {token}"}
         ingest_url = settings.CLOUD_INGEST_URL  # e.g., "https://cloud.example.com/api/ingest-uptime/"
         try:
             response = requests.post(ingest_url, json=payload, headers=headers, timeout=10)
             if response.status_code not in (200, 201):
-                print(f"Cloud ingest failed for network {network.id}: {response.text}")
+                logger.error(f"Cloud ingest failed for network {network.id}: {response.text}")
+                raise Exception(f"Cloud ingest failed for network {network.id}: {response.text}")
             else:
-                print(f"Successfully ingested ping data for network {network.id}")
+                logger.info(f"Successfully ingested ping data for network {network.id}")
                 # Optionally: mark these pings as sent to avoid duplicates.
                 # pings.update(sent=True)
         except Exception as exc:
-            print(f"Exception during cloud ingest for network {network.id}: {exc}")
+            logger.error(f"Exception during cloud ingest for network {network.id}: {exc}")
+            raise
 
 
 def alive(ip):
@@ -97,4 +108,5 @@ def ping_hosts():
         status = alive(host.ip_address)
         # Create a new PingResult (timestamp is set automatically)
         Ping.objects.create(host=host, is_alive=status, network=host.network)
+        logger.info(f"Pinged host {host.ip_address} ({host.name or ''}): {'alive' if status else 'down'}")
 

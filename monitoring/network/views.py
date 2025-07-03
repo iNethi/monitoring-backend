@@ -8,6 +8,9 @@ from django.conf import settings
 from .models import Network, Host
 from .serializers import NetworkSerializer, HostSerializer
 from .utils import get_cloud_token
+import logging
+
+logger = logging.getLogger(__name__)
 
 # -----------------------------
 # NETWORK VIEWS
@@ -72,9 +75,11 @@ class NetworkDetailView(APIView):
         try:
             cloud_response = requests.put(cloud_network_url, json=payload, headers=headers, timeout=5)
         except requests.RequestException as exc:
+            logger.error(f"Failed to update network on cloud: {exc}")
             return Response({"error": "Failed to update network on cloud", "details": str(exc)},
                             status=status.HTTP_502_BAD_GATEWAY)
         if cloud_response.status_code not in (200, 201):
+            logger.error(f"Cloud network update failed: {cloud_response.text}")
             return Response({"error": "Cloud network update failed", "details": cloud_response.text},
                             status=cloud_response.status_code)
 
@@ -98,9 +103,11 @@ class NetworkDetailView(APIView):
         try:
             cloud_response = requests.delete(cloud_network_url, headers=headers, timeout=5)
         except requests.RequestException as exc:
+            logger.error(f"Failed to delete network on cloud: {exc}")
             return Response({"error": "Failed to delete network on cloud", "details": str(exc)},
                             status=status.HTTP_502_BAD_GATEWAY)
         if cloud_response.status_code not in (200, 204):
+            logger.error(f"Cloud network deletion failed: {cloud_response.text}")
             return Response({"error": "Cloud network deletion failed", "details": cloud_response.text},
                             status=cloud_response.status_code)
         network.delete()
@@ -133,18 +140,20 @@ class CreateNetworkView(APIView):
         try:
             cloud_response = requests.post(cloud_network_url, json=payload, headers=headers, timeout=5)
         except requests.RequestException as exc:
+            logger.error(f"Failed to create network on cloud: {exc}")
             return Response(
                 {"error": "Failed to create network on cloud", "details": str(exc)},
                 status=status.HTTP_502_BAD_GATEWAY
             )
         if cloud_response.status_code not in (200, 201):
+            logger.error(f"Cloud network creation failed: {cloud_response.text}")
             return Response(
                 {"error": "Cloud network creation failed", "details": cloud_response.text},
                 status=cloud_response.status_code
             )
         json_response = cloud_response.json()
         cloud_pk = json_response["id"]
-        print(json_response)
+        logger.info(f"Cloud network created: {json_response}")
         # Cloud creation succeeded; create the network locally.
         local_data = request.data.copy()
         local_data['admin'] = user.id
@@ -212,9 +221,11 @@ class HostDetailView(APIView):
         try:
             cloud_response = requests.put(cloud_host_url, json=payload, headers=headers, timeout=5)
         except requests.RequestException as exc:
+            logger.error(f"Failed to update host on cloud: {exc}")
             return Response({"error": "Failed to update host on cloud", "details": str(exc)},
                             status=status.HTTP_502_BAD_GATEWAY)
         if cloud_response.status_code not in (200, 201):
+            logger.error(f"Cloud host update failed: {cloud_response.text}")
             return Response({"error": "Cloud host update failed", "details": cloud_response.text},
                             status=cloud_response.status_code)
         request.data['user'] = user.id
@@ -243,9 +254,11 @@ class HostDetailView(APIView):
         try:
             cloud_response = requests.delete(cloud_host_url, data=payload, headers=headers, timeout=5)
         except requests.RequestException as exc:
+            logger.error(f"Failed to delete host on cloud: {exc}")
             return Response({"error": "Failed to delete host on cloud", "details": str(exc)},
                             status=status.HTTP_502_BAD_GATEWAY)
         if cloud_response.status_code not in (200, 204):
+            logger.error(f"Cloud host deletion failed: {cloud_response.text}")
             return Response({"error": "Cloud host deletion failed", "details": cloud_response.text},
                             status=cloud_response.status_code)
         host.delete()
@@ -277,18 +290,20 @@ class CreateHostView(APIView):
         try:
             cloud_response = requests.post(cloud_host_url, json=payload, headers=headers, timeout=5)
         except requests.RequestException as exc:
+            logger.error(f"Failed to create host on cloud: {exc}")
             return Response(
                 {"error": "Failed to create host on cloud", "details": str(exc)},
                 status=status.HTTP_502_BAD_GATEWAY
             )
         if cloud_response.status_code not in (200, 201):
+            logger.error(f"Cloud host creation failed: {cloud_response.text}")
             return Response(
                 {"error": "Cloud host creation failed", "details": cloud_response.text},
                 status=cloud_response.status_code
             )
         json_response = cloud_response.json()
         cloud_pk = json_response["id"]
-        print(json_response)
+        logger.info(f"Cloud host created: {json_response}")
         # Cloud creation succeeded; create the network locally.
         local_data = request.data.copy()
         local_data['cloud_pk'] = cloud_pk
