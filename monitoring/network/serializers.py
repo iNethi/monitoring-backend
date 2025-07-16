@@ -10,6 +10,11 @@ class NetworkSerializer(serializers.ModelSerializer):
 
 
 class HostSerializer(serializers.ModelSerializer):
+    def validate_mac_address(self, value):
+        if value == '':
+            return None
+        return value
+
     class Meta:
         model = Host
         fields = ['id', 'name', 'ip_address', 'mac_address', 'user', 'device_type', 'network', 'cloud_pk']

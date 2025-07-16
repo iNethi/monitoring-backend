@@ -45,7 +45,6 @@ class Host(models.Model):
         max_length=17,
         blank=True,
         null=True,
-        unique=True,
         validators=[mac_address_validator],
     )
     user = models.ForeignKey(
@@ -73,6 +72,15 @@ class Host(models.Model):
     )
 
     cloud_pk = models.IntegerField(unique=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['mac_address'],
+                name='unique_mac_address_not_null',
+                condition=models.Q(mac_address__isnull=False),
+            ),
+        ]
 
     def __str__(self):
         return self.name if self.name else self.ip_address

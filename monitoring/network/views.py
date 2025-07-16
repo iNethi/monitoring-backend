@@ -207,6 +207,8 @@ class HostDetailView(APIView):
 
     def put(self, request, pk):
         user = request.user
+        logger.info(f"Host update request: {request.data}")
+        logger.info(f"user: {user}")
         host = self.get_object(pk, user)
         if not host:
             return Response({"error": "Host not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -214,10 +216,14 @@ class HostDetailView(APIView):
         if not token:
             return Response({"error": "Failed to obtain cloud token", "details": error},
                             status=status.HTTP_400_BAD_REQUEST)
+        host_id = host.cloud_pk
         payload = request.data.copy()
-        payload['network'] = host.network.name
+        payload['network'] = host.network.cloud_pk
+        logger.info(f"payloadfor cloud: {payload}")
         headers = {"Authorization": f"Bearer {token}"}
-        cloud_host_url = f"{settings.CLOUD_HOST_UPDATE_URL}"
+        cloud_host_url = f"{settings.CLOUD_HOST_UPDATE_URL}{host_id}/"
+        
+        logger.info(f"cloud_host_url: {cloud_host_url}")
         try:
             cloud_response = requests.put(cloud_host_url, json=payload, headers=headers, timeout=5)
         except requests.RequestException as exc:
@@ -233,6 +239,7 @@ class HostDetailView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+        logger.error(f"Host update failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):

@@ -27,20 +27,23 @@ env = environ.Env(
     CSRF_TRUSTED_ORIGINS=(list, []),
     CORS_ALLOWED_ORIGINS=(list, []),
 )
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS')
 CLOUD_API_URL=env("CLOUD_API_URL")
 # settings.py
 CLOUD_API_LOGIN_URL = f"{CLOUD_API_URL}user/network-admin/login/"
 CLOUD_NETWORK_CREATE_URL = f"{CLOUD_API_URL}networks/"
 CLOUD_HOST_CREATE_URL = f"{CLOUD_API_URL}hosts/"
 CLOUD_INGEST_URL = f"{CLOUD_API_URL}ingest-uptime/"
-CLOUD_HOST_UPDATE_URL= f"{CLOUD_API_URL}hosts/update-by-identifier/"
+CLOUD_HOST_UPDATE_URL= f"{CLOUD_API_URL}hosts/"
 CLOUD_HOST_DELETE_URL = f"{CLOUD_API_URL}hosts/delete-by-identifier/"
 CORS_ORIGIN_ALLOW_ALL = True
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS')
-
-print(CLOUD_API_URL)
+print(f'[settings.py] ALLOWED_HOSTS: {ALLOWED_HOSTS}')
+print(f'[settings.py] CSRF_TRUSTED_ORIGINS: {CSRF_TRUSTED_ORIGINS}')
+print(f'[settings.py] CORS_ALLOWED_ORIGINS: {CORS_ALLOWED_ORIGINS}')
+print(f'[settings.py] CLOUD_API_URL: {CLOUD_API_URL}')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
@@ -73,11 +76,11 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
