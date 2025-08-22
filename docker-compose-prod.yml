@@ -22,8 +22,8 @@ services:
       - db
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.monitoring-backend.rule=Host(`monitoring-backend.inethilocal.net`)"
-      - "traefik.http.routers.monitoring-backend.entrypoints=websecure"
+      - "traefik.http.routers.monitoring-backend.rule=Host(`${TRAEFIK_BACKEND_HOST:-monitoring-backend.inethilocal.net}`)"
+      - "traefik.http.routers.monitoring-backend.entrypoints=${TRAEFIK_ENTRYPOINTS:-websecure}"
       - "traefik.http.services.monitoring-backend.loadbalancer.server.port=8000"
 
   db:
@@ -41,7 +41,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASS:-devpass}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.monitoring-backenddb.entrypoints=websecure"
+      - "traefik.http.routers.monitoring-backenddb.entrypoints=${TRAEFIK_ENTRYPOINTS:-websecure}"
   redis:
     image: redis:alpine
     restart: unless-stopped
@@ -85,7 +85,7 @@ services:
 networks:
   default:
     external:
-      name: "inethi-bridge-traefik"
+      name: "${TRAEFIK_NETWORK_BRIDGE:-inethi-bridge-traefik}"
 
 volumes:
   prod-db-data-monitoring-timescale:
