@@ -66,7 +66,8 @@ def submit_ping_data():
         # Obtain a fresh token using the network admin's credentials.
         token, error = get_cloud_token(network.admin)
         if not token:
-            logger.error(f"Failed to obtain cloud token for network {network.id}: {error}")
+            print(f"Token error: {error}")
+            print(f"Payload: {payload}")
             raise Exception(f"Failed to obtain cloud token for network {network.id}: {error}")
 
         headers = {"Authorization": f"Bearer {token}"}
@@ -74,14 +75,16 @@ def submit_ping_data():
         try:
             response = requests.post(ingest_url, json=payload, headers=headers, timeout=10)
             if response.status_code not in (200, 201):
-                # logger.error(f"Cloud ingest failed for network {network.id}: {response.text}")
-                raise Exception(f"Cloud ingest failed for network {network.id}: {response.text}")
+                print(f"API error: {response.status_code}")
+                print(f"Payload: {payload}")
+                raise Exception(f"Cloud ingest failed for network {network.id}")
             else:
                 logger.info(f"Successfully ingested ping data for network {network.id}")
                 # Optionally: mark these pings as sent to avoid duplicates.
                 # pings.update(sent=True)
         except Exception as exc:
-            # logger.error(f"Exception during cloud ingest for network {network.id}: {exc}")
+            print(f"Exception: {exc}")
+            print(f"Payload: {payload}")
             raise
 
 
