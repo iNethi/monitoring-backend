@@ -30,7 +30,7 @@ def submit_ping_data():
       "network": <network_id>,
       "network_admin": <network_admin_identifier>,
       "data": [
-         { "host": <host_id>, "is_alive": <bool>, "timestamp": <ISO8601 timestamp> },
+         { "host": <host_id>, "is_alive": <bool>, "time": <ISO8601 timestamp> },
          ...
       ]
     }
@@ -52,7 +52,7 @@ def submit_ping_data():
             data.append({
                 "host": ping.host.cloud_pk,
                 "is_alive": ping.is_alive,
-                "timestamp": ping.timestamp.isoformat(),
+                "time": ping.timestamp.isoformat() if ping.timestamp else timezone.now().isoformat(),
             })
 
         payload = {
