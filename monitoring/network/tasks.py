@@ -74,7 +74,7 @@ def submit_ping_data():
         try:
             response = requests.post(ingest_url, json=payload, headers=headers, timeout=10)
             if response.status_code not in (200, 201):
-                logger.error(f"Cloud ingest failed for network {network.id}: {response.text}")
+                # logger.error(f"Cloud ingest failed for network {network.id}: {response.text}")
                 raise Exception(f"Cloud ingest failed for network {network.id}: {response.text}")
             else:
                 logger.info(f"Successfully ingested ping data for network {network.id}")
