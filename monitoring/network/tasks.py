@@ -61,6 +61,7 @@ def submit_ping_data():
             "data": data,
         }
         print(f"Payload: {payload}")
+        logger.info(f"Payload: {payload}")
 
         # Obtain a fresh token using the network admin's credentials.
         token, error = get_cloud_token(network.admin)
@@ -80,7 +81,7 @@ def submit_ping_data():
                 # Optionally: mark these pings as sent to avoid duplicates.
                 # pings.update(sent=True)
         except Exception as exc:
-            logger.error(f"Exception during cloud ingest for network {network.id}: {exc}")
+            # logger.error(f"Exception during cloud ingest for network {network.id}: {exc}")
             raise
 
 
