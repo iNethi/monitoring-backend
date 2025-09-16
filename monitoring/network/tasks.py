@@ -52,6 +52,7 @@ def submit_ping_data():
             data.append({
                 "host": ping.host.cloud_pk,
                 "is_alive": ping.is_alive,
+                "time": ping.timestamp.isoformat() if ping.timestamp else timezone.now().isoformat(),
                 "timestamp": ping.timestamp.isoformat() if ping.timestamp else timezone.now().isoformat(),
             })
 
